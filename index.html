@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarot of Destiny - ดูดวงไพ่ทาโรต์</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* เอฟเฟกต์ตอนเอาเมาส์ชี้ไพ่ */
+        .card-hover:hover { transform: translateY(-10px); }
+        .modal-bg { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen font-sans selection:bg-yellow-500 selection:text-black">
+
+    <div id="main-board" class="p-8 max-w-5xl mx-auto">
+        <h1 class="text-4xl md:text-5xl font-bold text-center text-yellow-400 mb-2">🔮 Tarot of Destiny</h1>
+        <p class="text-center text-gray-400 mb-10">ตั้งสมาธิ แล้วคลิกเลือกไพ่ที่ดึงดูดสายตาคุณมากที่สุด</p>
+        
+        <div id="card-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
+    </div>
+
+    <div id="card-modal" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-800 border border-yellow-500/50 rounded-2xl max-w-md w-full p-6 relative shadow-2xl">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">✕</button>
+            <div class="text-center">
+                <img id="modal-img" src="" class="h-64 mx-auto mb-4 rounded-lg shadow-[0_0_15px_rgba(234,179,8,0.4)]" alt="Card">
+                <h2 id="modal-name" class="text-2xl font-bold text-yellow-400 mb-2"></h2>
+                <p id="modal-keyword" class="text-sm font-semibold text-yellow-200 bg-yellow-900/40 inline-block px-3 py-1 rounded-full mb-4"></p>
+                <p id="modal-summary" class="text-gray-300 mb-6 leading-relaxed"></p>
+                
+                <button onclick="showDetailView()" class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-xl hover:scale-105 transition transform">
+                    📜 อ่านคำทำนายฉบับเต็ม
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detail-view" class="hidden p-6 md:p-12 max-w-4xl mx-auto">
+        <button onclick="backToBoard()" class="text-yellow-400 hover:text-yellow-300 hover:underline mb-8 text-lg font-semibold">
+            ⬅ กลับไปหน้าโต๊ะปูไพ่
+        </button>
+        <div class="bg-gray-800 rounded-3xl p-8 flex flex-col md:flex-row gap-8 shadow-2xl border border-gray-700">
+            <div class="md:w-1/3 flex justify-center items-start">
+                <img id="detail-img" src="" class="w-full max-w-[250px] rounded-xl shadow-lg border border-gray-600">
+            </div>
+            <div class="md:w-2/3">
+                <h1 id="detail-name" class="text-4xl font-bold text-yellow-400 mb-6"></h1>
+                <div class="space-y-6">
+                    <div class="bg-blue-900/20 p-5 rounded-xl border border-blue-500/30">
+                        <h3 class="font-bold text-blue-400 mb-2 text-xl">💼 การงาน & อาชีพ</h3>
+                        <p id="detail-work" class="text-gray-300"></p>
+                    </div>
+                    <div class="bg-green-900/20 p-5 rounded-xl border border-green-500/30">
+                        <h3 class="font-bold text-green-400 mb-2 text-xl">💰 การเงิน & โชคลาภ</h3>
+                        <p id="detail-finance" class="text-gray-300"></p>
+                    </div>
+                    <div class="bg-pink-900/20 p-5 rounded-xl border border-pink-500/30">
+                        <h3 class="font-bold text-pink-400 mb-2 text-xl">❤️ ความรัก & ความสัมพันธ์</h3>
+                        <p id="detail-love" class="text-gray-300"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. ฐานข้อมูลไพ่ (มาแก้ข้อความตรงนี้ได้เลย)
+        const tarotData = [
+            {
+                id: 1, name: "The Fool (ไพ่เดอะฟูล)",
+                image: "https://placehold.co/300x500/222/fcd34d?text=The+Fool",
+                keyword: "การเริ่มต้นใหม่, อิสระ, ความท้าทาย",
+                summary: "ก้าวออกจาก comfort zone แล้วกระโดดลงไปในสนามใหม่ๆ โดยไม่ต้องกังวลอดีต...",
+                work: "มีเกณฑ์ได้เริ่มโปรเจกต์ใหม่ หรือย้ายงานไปสู่สายงานที่ไม่เคยทำมาก่อน",
+                finance: "ระวังการใช้เงินตามใจตัวเอง แต่มีโอกาสได้เงินจากช่องทางแปลกๆ",
+                love: "คนโสดจะเจอคนน่าสนใจเข้ามาแบบไม่ทันตั้งตัว ความรักตื่นเต้นเหมือนรถไฟเหาะ"
+            },
+            {
+                id: 2, name: "The Magician (ไพ่นักมายากล)",
+                image: "https://placehold.co/300x500/333/60a5fa?text=The+Magician",
+                keyword: "พรสวรรค์, การลงมือทำ, ความมั่นใจ",
+                summary: "คุณมีเครื่องมือทุกอย่างพร้อมแล้ว ถึงเวลาลงมือเสกเป้าหมายให้เป็นจริง...",
+                work: "ใช้ทักษะการเจรจาและการแก้ปัญหาเฉพาะหน้า จะทำให้ผู้ใหญ่ประทับใจมาก",
+                finance: "หาเงินเก่ง หยิบจับอะไรก็เป็นเงินเป็นทองในช่วงนี้",
+                love: "มีเสน่ห์ดึงดูดสูงมาก คุณเป็นฝ่ายคุมเกมในความสัมพันธ์นี้"
+            },
+            // เพิ่มใบที่ 3, 4, 5 ได้ตรงนี้ตามรูปแบบข้างบน
+        ];
+
+        let currentCard = null;
+
+        // 2. สร้างหลังไพ่มาวางบนโต๊ะ
+        const grid = document.getElementById('card-grid');
+        // เราจะจำลองไพ่ 10 ใบมาวางคว่ำไว้
+        for(let i=0; i<10; i++) {
+            const cardEl = document.createElement('div');
+            // ดีไซน์หลังไพ่
+            cardEl.className = 'bg-indigo-950 h-72 rounded-xl flex items-center justify-center border-2 border-yellow-600/50 cursor-pointer shadow-lg card-hover transition-all bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-800 to-black relative overflow-hidden';
+            cardEl.innerHTML = '<span class="text-6xl absolute z-10">⚜️</span><div class="absolute inset-0 bg-black opacity-20"></div>';
+            
+            // พอกดไพ่ ให้สุ่มหยิบไพ่จากฐานข้อมูลมา 1 ใบ
+            cardEl.onclick = () => {
+                const randomCard = tarotData[Math.floor(Math.random() * tarotData.length)];
+                openModal(randomCard);
+            };
+            grid.appendChild(cardEl);
+        }
+
+        // 3. ฟังก์ชันเปิดหน้าต่าง Modal
+        function openModal(card) {
+            currentCard = card;
+            document.getElementById('modal-img').src = card.image;
+            document.getElementById('modal-name').innerText = card.name;
+            document.getElementById('modal-keyword').innerText = card.keyword;
+            document.getElementById('modal-summary').innerText = card.summary;
+            document.getElementById('card-modal').classList.remove('hidden');
+        }
+
+        // 4. ฟังก์ชันปิดหน้าต่าง Modal
+        function closeModal() {
+            document.getElementById('card-modal').classList.add('hidden');
+        }
+
+        // 5. ฟังก์ชันเปิดหน้าเจาะลึก
+        function showDetailView() {
+            closeModal(); // ปิด modal ก่อน
+            document.getElementById('main-board').classList.add('hidden'); // ซ่อนหน้าโต๊ะไพ่
+            
+            // เอาข้อมูลไพ่ที่เลือกมาใส่ในหน้าเจาะลึก
+            document.getElementById('detail-img').src = currentCard.image;
+            document.getElementById('detail-name').innerText = currentCard.name;
+            document.getElementById('detail-work').innerText = currentCard.work;
+            document.getElementById('detail-finance').innerText = currentCard.finance;
+            document.getElementById('detail-love').innerText = currentCard.love;
+            
+            document.getElementById('detail-view').classList.remove('hidden'); // โชว์หน้าเจาะลึก
+            window.scrollTo(0, 0); // เลื่อนจอขึ้นบนสุด
+        }
+
+        // 6. ฟังก์ชันกลับไปโต๊ะไพ่
+        function backToBoard() {
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('main-board').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
